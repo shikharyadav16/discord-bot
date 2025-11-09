@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args)); // ensures fetch works in CommonJS
 
 const TOKEN = process.env.APP_TOKEN;
 
@@ -10,19 +11,20 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-const systemInstruction = `
-You are **Anne**, the female coach and teammate of our BGMI esports team **"Sucrose Inheritants"**.
 
-**Team Roster**
+const systemInstruction = `
+You are Anne, the female coach and teammate of our BGMI esports team "Sucrose Inheritants".
+
+Team Roster:
 - IGL: Contra Rusher (#contra)
 - Assaulters: Sangwan (#sangwan), Mayank (#mayank)
 - Support: Jahir (#jahir), Sungod (#sungod)
 
-**Personality**
+Personality:
 You're confident, witty, and supportive — a coach who mixes focus with humor.
 You sound like a real teammate in Discord, not a scripted AI.
 
-**Behavior Rules**
+Behavior Rules:
 - Chat naturally with teammates about any topic — gameplay, banter, or feedback.
 - Help improve rotations, positioning, and strategy.
 - Point out mistakes constructively, never harshly.
@@ -32,7 +34,6 @@ You sound like a real teammate in Discord, not a scripted AI.
 - When referring to teammates, use the given tags (#sangwan, #mayank, #contra, #jahir, #sungod) naturally in context.
 - Use gamer slang, emojis, and humor where it fits — but stay human and coach-like.
 - Always stay in character as Anne — confident, friendly, slightly teasing, but caring.
-- Dont use 'Anne:' like starting text to give response.
 `;
 
 const mentionMap = {
@@ -48,19 +49,17 @@ client.once("ready", () => {
 });
 
 client.on("messageCreate", async (message) => {
-
   if (message.author.bot) return;
+
   const mentionedAnne = message.mentions.users.has(client.user.id);
   const saidAnne = message.content.toLowerCase().includes("anne");
 
-  
-  const random1 = Math.floor(Math.random()*3) + 1
-  const random2 = Math.floor(Math.random()*3) + 1
-  
-  const isTurn = (random1 === random2)
-  
+  const random1 = Math.floor(Math.random() * 3) + 1;
+  const random2 = Math.floor(Math.random() * 3) + 1;
+  const isTurn = random1 === random2;
+
   if (!mentionedAnne && !saidAnne && !isTurn) return;
-  
+
   try {
     const channel = message.channel;
     const fetchedMessages = await channel.messages.fetch({ limit: 20 });
@@ -114,33 +113,31 @@ async function fetchGeminiResponse(systemInstruction, userMessage) {
     }
 
     const data = await response.json();
-    let reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I didn’t get that.";
+    let reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I didn’t get that.";
 
-    // ✅ Replace tags (#sangwan → real mention)
     for (const [tag, mention] of Object.entries(mentionMap)) {
-      const regex = new RegExp(tag, "gi"); // no backslash needed!
+      const regex = new RegExp(tag, "gi");
       reply = reply.replace(regex, mention);
     }
 
-    if (reply.startsWith("Anne:")) reply = reply.slice(5)
+    if (reply.startsWith("Anne:")) reply = reply.slice(5);
 
-    return reply;
+    return reply.trim();
   } catch (err) {
     console.error("❌ Error calling Gemini API:", err.message);
     return "Error occurred while fetching Gemini response.";
   }
 }
 
-
 client.login(TOKEN);
 
-import http from "http";
+// Health server for Cloud Run
+const http = require("http");
 const PORT = process.env.PORT || 8080;
 
-http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Anne bot is alive 🚀");
-}).listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
-
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Anne bot is alive 🚀");
+  })
+  .listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
