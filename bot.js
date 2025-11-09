@@ -2,7 +2,6 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 
 const TOKEN = process.env.APP_TOKEN;
-const TARGET_CHANNEL_ID = "1205941916609417218";
 
 const client = new Client({
   intents: [
@@ -11,75 +10,93 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-
 const systemInstruction = `
-You are "Anne", the female coach of our BGMI esports team "Sucrose Inheritants".
-Team members:
-- IGL: Contra Rusher
-- Assaulters: Sangwan, Mayank
-- Support: Jahir, Sungod
+You are **Anne**, the female coach and teammate of our BGMI esports team **"Sucrose Inheritants"**.
 
-Your job is to:
-- Chat naturally with the team members in a casual, friendly way whatever topic they want to talk.
-- Help them make better in-game strategies and rotations.
-- Point out their mistakes constructively after matches.
-- Keep your replies short and chat-style, like real-time gaming conversations.
-- Never sound robotic — use a mix of confidence, humor, and team spirit.
+**Team Roster**
+- IGL: Contra Rusher (#contra)
+- Assaulters: Sangwan (#sangwan), Mayank (#mayank)
+- Support: Jahir (#jahir), Sungod (#sungod)
+
+**Personality**
+You're confident, witty, and supportive — a coach who mixes focus with humor.
+You sound like a real teammate in Discord, not a scripted AI.
+
+**Behavior Rules**
+- Chat naturally with teammates about any topic — gameplay, banter, or feedback.
+- Help improve rotations, positioning, and strategy.
+- Point out mistakes constructively, never harshly.
+- Keep every message short and conversational (Discord-style, not paragraphs).
+- Never prefix messages with your name (❌ “Anne: hi”).
+- Do not describe or comment on tagging or mentions.
+- When referring to teammates, use the given tags (#sangwan, #mayank, #contra, #jahir, #sungod) naturally in context.
+- Use gamer slang, emojis, and humor where it fits — but stay human and coach-like.
+- Always stay in character as Anne — confident, friendly, slightly teasing, but caring.
+- Dont use 'Anne:' like starting text to give response.
 `;
 
+const mentionMap = {
+  "#contra": "<@952507589772582922>",
+  "#sungod": "<@631090203242528768>",
+  "#jahir": "<@1378077613972783199>",
+  "#mayank": "<@776370963154731018>",
+  "#sangwan": "<@1094004706822590464>",
+};
 
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// Message listener
 client.on("messageCreate", async (message) => {
+
   if (message.author.bot) return;
+  const mentionedAnne = message.mentions.users.has(client.user.id);
+  const saidAnne = message.content.toLowerCase().includes("anne");
 
-  const channel = message.channel;
+  
+  const random1 = Math.floor(Math.random()*3) + 1
+  const random2 = Math.floor(Math.random()*3) + 1
+  
+  const isTurn = (random1 === random2)
+  
+  if (!mentionedAnne && !saidAnne && !isTurn) return;
+  
+  try {
+    const channel = message.channel;
+    const fetchedMessages = await channel.messages.fetch({ limit: 20 });
+    const messageArray = Array.from(fetchedMessages.values()).reverse();
+    if (messageArray[0].author.bot) return;
 
-  if (message.content.toLowerCase().includes("anne")) {
-    try {
-      const fetchedMessages = await channel.messages.fetch({ limit: 20 });
-      const messageArray = Array.from(fetchedMessages.values()).reverse();
+    const chatHistory = messageArray
+      .map((m) => `${m.author.username}: ${m.content}`)
+      .join("\n");
 
-      const chatHistory = messageArray
-        .map((m) => `${m.author.username}: ${m.content}`)
-        .join("\n");
+    const res = await fetchGeminiResponse(systemInstruction, chatHistory);
 
-      const res = await fetchGeminiResponse(systemInstruction, chatHistory);
-
-      await message.channel.send(res.slice(5) || "Anne has nothing to say right now.");
-    } catch (err) {
-      console.error("Error while processing 'anne' command:", err);
-      message.channel.send("Something went wrong while fetching chat history.");
-    }
+    await message.channel.send(res || "Anne has nothing to say right now.");
+  } catch (err) {
+    console.error("Error while processing 'anne' command:", err);
+    await message.channel.send("Something went wrong while fetching chat history.");
   }
 });
 
 async function fetchGeminiResponse(systemInstruction, userMessage) {
-
-
-    const body = {
-      systemInstruction: {
-        role: "system",
-        parts: [
-          { text: systemInstruction }
-        ]
+  const body = {
+    systemInstruction: {
+      role: "system",
+      parts: [{ text: systemInstruction }],
+    },
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: userMessage }],
       },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: userMessage }
-          ]
-        }
-      ]
-    };
+    ],
+  };
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -90,23 +107,40 @@ async function fetchGeminiResponse(systemInstruction, userMessage) {
       }
     );
 
-    if (response.ok) {
-      const data = await response.json();
-      const reply =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "I didn’t get that.";
-
-        return reply;
-
-    } else {
+    if (!response.ok) {
       const errMsg = await response.text();
-      console.log("Error in Gemini.", errMsg);
+      console.error("Gemini API Error:", errMsg);
+      return "Anne couldn’t process that right now 😅";
     }
 
+    const data = await response.json();
+    let reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I didn’t get that.";
+
+    // ✅ Replace tags (#sangwan → real mention)
+    for (const [tag, mention] of Object.entries(mentionMap)) {
+      const regex = new RegExp(tag, "gi"); // no backslash needed!
+      reply = reply.replace(regex, mention);
+    }
+
+    if (reply.startsWith("Anne:")) reply = reply.slice(5)
+
+    return reply;
   } catch (err) {
     console.error("❌ Error calling Gemini API:", err.message);
     return "Error occurred while fetching Gemini response.";
   }
 }
 
+
 client.login(TOKEN);
+
+import http from "http";
+const PORT = process.env.PORT || 8080;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Anne bot is alive 🚀");
+}).listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
+
