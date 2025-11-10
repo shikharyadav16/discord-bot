@@ -79,6 +79,8 @@ client.on("messageCreate", async (message) => {
   }
 });
 
+const fetch = require('node-fetch');
+
 async function fetchGeminiResponse(systemInstruction, userMessage) {
   const body = {
     systemInstruction: {
