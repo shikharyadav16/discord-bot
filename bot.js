@@ -129,15 +129,6 @@ async function fetchGeminiResponse(systemInstruction, userMessage) {
   }
 }
 
+console.log(TOKEN)
+
 client.login(TOKEN);
-
-// Health server for Cloud Run
-const http = require("http");
-const PORT = process.env.PORT || 8080;
-
-http
-  .createServer((req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Anne bot is alive 🚀");
-  })
-  .listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
