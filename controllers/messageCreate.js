@@ -1,8 +1,9 @@
 const { systemInstruction } = require('../config/gemini_system_instr'); 
 const { resultChannelId } = require('../config/channels');
 const { fetchGeminiResponse } = require('../services/gemini')
-const { checkResultFormat, showResultStatus } = require('../utils/matchResultHelper');
+const { checkResultFormat } = require('../utils/matchResultHelper');
 const client = require('../services/discord');
+const { checkCases } = require('../utils/messageCreateCases');
 
 async function handleMessageCreate(message) {
   if (message.author.bot) return;
@@ -13,19 +14,7 @@ async function handleMessageCreate(message) {
   if (message.channel.id === resultChannelId)
     return checkResultFormat(message.content, message);
 
-  switch (message.content.trim()) {
-    case "show-result":
-        return showResultStatus(message);
-
-    case "show-result erangle":
-        return showResultStatus(message, "erangle");
-    
-    case "show-result miramar":
-        return showResultStatus(message, "miramar");
-
-    case "show-result rondo":
-        return showResultStatus(message, "rondo");
-  }
+  await checkCases(message);
 
   const mentionedAnne = message.mentions.users.has(client.user.id);
   const saidAnne = message.content.toLowerCase().includes("anne");
