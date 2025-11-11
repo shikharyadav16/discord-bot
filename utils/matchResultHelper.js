@@ -66,14 +66,14 @@ async function showResultStatus(message, filter = false) {
       Top1: entry.Top1,
     }));
 
-    const formattedText = formatSummaryForDiscord(summary);
+    const formattedText = formatSummaryForDiscord(summary, results.length);
     await message.channel.send(formattedText);
   } catch (err) {
     message.channel.send("Format is invalid");
   }
 }
 
-function formatSummaryForDiscord(summaryArray) {
+function formatSummaryForDiscord(summaryArray, len) {
   if (!Array.isArray(summaryArray) || summaryArray.length === 0)
     return "No summary data available.";
 
@@ -82,7 +82,7 @@ function formatSummaryForDiscord(summaryArray) {
   for (const entry of summaryArray) {
     result += "> **Type:**  " + entry.Type + "\n";
     result += "> **Maps:**  " + entry.Maps.join(", ") + "\n";
-    result += "> **Total Matches:**  " + result.length + "\n";
+    result += "> **Total Matches:**  " + len + "\n";
     result += "> **Total Kills:**  " + entry.TotalKills + "\n";
     result += "> **Top 3 Finishes:**  " + entry.Top3 + "\n";
     result += "> **Top 1 Finishes:**  " + entry.Top1 + "\n";
