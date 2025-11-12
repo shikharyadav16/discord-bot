@@ -74,7 +74,7 @@ async function showPlayerStatus(message, name) {
 
   } catch (err) {
     console.error(err);
-    message.channel.send("⚠️ Format is invalid or data not readable.");
+    message.channel.send("Format is invalid or data not readable.");
   }
 }
 
