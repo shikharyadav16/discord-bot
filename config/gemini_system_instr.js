@@ -31,4 +31,16 @@ const mentionMap = {
   "#sangwan": "<@1094004706822590464>",
 };
 
-module.exports = { systemInstruction, mentionMap }
+const tools = [
+  {
+    functionDeclarations : [
+      {
+        name: "fetchPreviousMatches",
+        description: "To get the history of the matches played",
+        parameters: {}
+      }
+    ]
+  }
+]
+
+module.exports = { systemInstruction, mentionMap, tools }

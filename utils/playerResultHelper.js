@@ -13,8 +13,8 @@ async function showPlayerStatus(message, name) {
     for (const msg of fetchedMessages.values()) {
       const lines = msg.content
         .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.includes(":"));
+        .map((line) => line.trim())
+        .filter((line) => line.includes(":"));
 
       const obj = {};
       for (const line of lines) {
@@ -50,7 +50,7 @@ async function showPlayerStatus(message, name) {
             Type: type,
             Maps: new Set(),
             TotalKills: 0,
-            Matches: 0
+            Matches: 0,
           };
         }
 
@@ -60,18 +60,17 @@ async function showPlayerStatus(message, name) {
 
         return acc;
       }, {})
-    ).map(entry => ({
+    ).map((entry) => ({
       Player: name,
       Type: entry.Type,
       Maps: Array.from(entry.Maps),
       TotalKills: entry.TotalKills,
-      Matches: entry.Matches
+      Matches: entry.Matches,
     }));
 
     // format for Discord
     const formattedText = formatSummaryForDiscord(summary);
     await message.channel.send(formattedText);
-
   } catch (err) {
     console.error(err);
     message.channel.send("Format is invalid or data not readable.");
@@ -92,10 +91,10 @@ function formatSummaryForDiscord(summaryArray) {
     result += `> **Matches played:** ${entry.Matches}\n`;
     result += `> **Average Kills:** ${avgKills}\n`;
     result += `> **Total Kills:** ${entry.TotalKills}\n`;
+    result += `> **━━━━━━━━━━━━━━━━━━━━━━**\n`;
   }
 
   return result;
 }
-
 
 module.exports = { showPlayerStatus };
