@@ -1,7 +1,12 @@
 require("dotenv").config();
 const { handleMessageCreate } = require("./controllers/messageCreate")
+
+const connectToDb = require("./Connection.js")
 const TOKEN = process.env.APP_TOKEN;
 const client = require('./services/discord.js')
+
+
+connectToDb(process.env.MONGO_URI);
 
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);

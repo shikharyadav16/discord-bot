@@ -4,6 +4,7 @@ const client = require("../services/discord");
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 async function showPlayerStatus(message, name) {
+  return;
   try {
     const playersChannel = await client.channels.fetch(playersChannelId);
     const fetchedMessages = await playersChannel.messages.fetch();

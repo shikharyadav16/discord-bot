@@ -2,6 +2,7 @@ const { showResultStatus } = require('./matchResultHelper')
 const { showPlayerStatus } = require('./playerResultHelper')
 
 function checkCases(message) {
+    return;
 
     switch (message.content.trim()) {
         case "show-result":
@@ -39,6 +40,7 @@ function checkCases(message) {
 
         case "show-result contra":
             return showPlayerStatus(message, "contra");
+
       }
 }
 
